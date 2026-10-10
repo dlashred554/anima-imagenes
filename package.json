@@ -1,0 +1,20 @@
+{
+  "name": "anima-imagenes",
+  "version": "1.0.0",
+  "description": "Anima imágenes (zoom y desplazamiento tipo Ken Burns) y las convierte en vídeo MP4 con FFmpeg",
+  "main": "src/animate-images.js",
+  "bin": { "anima-imagenes": "src/animate-images.js" },
+  "scripts": {
+    "animar": "node src/animate-images.js ./images --join --out ./output",
+    "start": "node src/animate-images.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dlashred554/anima-imagenes.git"
+  },
+  "keywords": ["ffmpeg", "ken-burns", "imagenes", "video", "animacion"],
+  "license": "MIT",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0"
+  }
+}
