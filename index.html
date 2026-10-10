@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Anima Imágenes</title>
+<title>Anima Imágenes con Prompts</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞️</text></svg>">
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--fg:#1b1b1f;--mut:#6b6b76;--ac:#6d4aff;--bd:#e3e1db;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -12,143 +12,215 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 40px}
 h1{font-size:1.6rem;margin:0 0 4px}
 p.sub{margin:0 0 20px;color:var(--mut)}
-.grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
-@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+@media(max-width:840px){.grid{grid-template-columns:1fr}}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
-canvas{width:100%;height:auto;border-radius:10px;background:#000;display:block}
-.drop{border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;color:var(--mut);cursor:pointer}
-.drop.over{border-color:var(--ac);color:var(--ac)}
-label{display:block;font-size:.85rem;color:var(--mut);margin:12px 0 4px}
-select,input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);font:inherit}
-input[type=range]{width:100%;accent-color:var(--ac)}
+canvas{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:10px;background:#000;display:block}
+textarea,input[type=text]{width:100%;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);font:inherit}
+textarea{resize:vertical;min-height:70px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:0 0 4px}
 button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:#fff;cursor:pointer}
-button.sec{background:transparent;color:var(--fg);border:1px solid var(--bd)}
 button:disabled{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{background:transparent;color:var(--fg);border:1px solid var(--bd);padding:4px 10px;border-radius:999px;font-size:.8rem}
+#info{font-size:.85rem;color:var(--ac);margin-top:10px}
+.drop{border:2px dashed var(--bd);border-radius:12px;padding:16px;text-align:center;color:var(--mut);cursor:pointer}
+.drop.over{border-color:var(--ac);color:var(--ac)}
+.it{display:grid;grid-template-columns:56px 1fr 22px;gap:8px;align-items:center;margin-top:8px}
+.it img{width:56px;height:42px;object-fit:cover;border-radius:6px}
+.it b{width:22px;height:22px;border-radius:50%;background:var(--bd);text-align:center;line-height:22px;cursor:pointer;font-weight:400}
 .row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
-.thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:4px}
-.th{position:relative;flex:0 0 72px;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--bd)}
-.th img{width:100%;height:100%;object-fit:cover}
-.th b{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;line-height:20px;text-align:center;cursor:pointer}
+input[type=range]{accent-color:var(--ac)}
 .bar{height:6px;background:var(--bd);border-radius:3px;overflow:hidden;margin-top:10px;display:none}
 .bar i{display:block;height:100%;width:0;background:var(--ac)}
-.note{font-size:.8rem;color:var(--mut);margin-top:8px}
+.note{font-size:.8rem;color:var(--mut)}
 #res{margin-top:14px;display:none}
-#res video{width:100%;border-radius:10px}
+#res video{width:100%;max-height:60vh;border-radius:10px}
 a.dl{display:inline-block;margin-top:8px;padding:10px 14px;border-radius:10px;background:var(--ac);color:#fff;text-decoration:none}
 </style>
 </head>
 <body>
 <main>
-  <h1>🎞️ Anima Imágenes</h1>
-  <p class="sub">Convierte tus fotos en un vídeo animado con zoom y movimiento de cámara. Todo ocurre en tu navegador: tus imágenes no se suben a ningún sitio.</p>
+  <h1>🎞️ Anima Imágenes con Prompts</h1>
+  <p class="sub">Sube tus fotos y escribe cómo quieres que se muevan. Todo ocurre en tu navegador: tus imágenes no se suben a ningún sitio.</p>
   <div class="grid">
     <div class="card">
       <canvas id="cv" width="1280" height="720"></canvas>
       <div class="row">
         <button id="play" disabled>▶ Reproducir</button>
         <input type="range" id="scrub" min="0" max="1000" value="0" style="flex:1;min-width:120px" disabled>
-        <span id="time" class="note" style="margin:0">0.0 / 0.0 s</span>
+        <span id="time" class="note">0.0 / 0.0 s</span>
       </div>
+      <div class="row"><button id="exp" disabled style="flex:1">Crear vídeo</button></div>
       <div class="bar" id="bar"><i id="barfill"></i></div>
+      <p class="note">El vídeo se graba en tiempo real: mantén esta pestaña visible mientras se crea.</p>
       <div id="res"><video id="vid" controls playsinline></video><br><a class="dl" id="dl">⬇ Descargar vídeo</a></div>
     </div>
-    <div class="card">
-      <div class="drop" id="drop">Arrastra imágenes aquí o toca para elegirlas<input id="file" type="file" accept="image/*" multiple hidden></div>
-      <div class="thumbs" id="thumbs"></div>
-      <label for="eff">Efecto</label>
-      <select id="eff">
-        <option value="random">Aleatorio</option><option value="zoom-in">Zoom in</option><option value="zoom-out">Zoom out</option>
-        <option value="pan-left">Desplazar izquierda</option><option value="pan-right">Desplazar derecha</option>
-        <option value="pan-up">Desplazar arriba</option><option value="pan-down">Desplazar abajo</option>
-      </select>
-      <label for="dur">Segundos por imagen</label>
-      <input id="dur" type="number" min="1" max="20" step="0.5" value="4">
-      <label for="fade">Transición (segundos)</label>
-      <input id="fade" type="number" min="0" max="3" step="0.1" value="0.6">
-      <label for="res_">Formato</label>
-      <select id="res_">
-        <option value="1280x720">Horizontal 1280×720</option><option value="1920x1080">Horizontal 1920×1080</option>
-        <option value="1080x1920">Vertical 1080×1920 (TikTok/Reels)</option><option value="1080x1080">Cuadrado 1080×1080</option>
-      </select>
-      <div class="row"><button id="exp" disabled style="flex:1">Crear vídeo</button></div>
-      <p class="note">Mientras se crea el vídeo mantén esta pestaña visible: se graba en tiempo real.</p>
+    <div>
+      <div class="card">
+        <label for="prompt">Prompt del vídeo (para todas las imágenes)</label>
+        <textarea id="prompt">zoom suave con pequeño movimiento</textarea>
+        <div class="chips" id="chips">
+          <button>zoom suave con pequeño movimiento</button>
+          <button>zoom in lento, 5 segundos, vertical para TikTok</button>
+          <button>zoom out, desplazar hacia la derecha, fundido 1 s</button>
+          <button>movimientos aleatorios, rápido, sin transición, cuadrado</button>
+        </div>
+        <div id="info"></div>
+        <p class="note">Entiende: <b>zoom in / zoom out</b>, <b>izquierda / derecha / arriba / abajo</b>, <b>suave / lento / fuerte / rápido</b>, <b>"5 segundos"</b>, <b>"fundido 1 s"</b> o <b>"sin transición"</b>, <b>vertical / TikTok / cuadrado / horizontal / 1080p</b>, <b>aleatorio</b>. Se interpreta con reglas en tu navegador; no es IA generativa.</p>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="drop" id="drop">Arrastra imágenes aquí o toca para elegirlas<input id="file" type="file" accept="image/*" multiple hidden></div>
+        <div id="list"></div>
+      </div>
     </div>
   </div>
 </main>
 <script>
 const $=s=>document.querySelector(s);
-const EFFECTS=['zoom-in','zoom-out','pan-left','pan-right','pan-up','pan-down'];
 const cv=$('#cv'),ctx=cv.getContext('2d');
-let items=[],t=0,playing=false,last=0,busy=false;
+const SIZES={h:[1280,720],hd:[1920,1080],v:[1080,1920],sq:[1080,1080]};
+const RANDS=[{z:'in'},{z:'out'},{h:'l'},{h:'r'},{v:'u'},{v:'d'}];
+const DIRS={l:'la izquierda',r:'la derecha',u:'arriba',d:'abajo'};
+let items=[],P=[],G={},FADE=.6,TOTAL=0,t=0,playing=false,last=0,busy=false;
 
-const cfg=()=>{const d=Math.max(1,+$('#dur').value||4);return{d,f:Math.min(Math.max(0,+$('#fade').value||0),d),eff:$('#eff').value}};
-const total=()=>items.length*cfg().d;
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const num=x=>parseFloat(String(x).replace(',','.'));
 
-function drawImg(im,p,ef){
-  const W=cv.width,H=cv.height,s0=Math.max(W/im.naturalWidth,H/im.naturalHeight);
-  let z=1.2,px=.5,py=.5;
-  if(ef==='zoom-in')z=1+.25*p;else if(ef==='zoom-out')z=1.25-.25*p;
-  else if(ef==='pan-left')px=1-p;else if(ef==='pan-right')px=p;
-  else if(ef==='pan-up')py=1-p;else if(ef==='pan-down')py=p;
+/* ---- Prompt -> parámetros ---- */
+function parse(text){
+  let s=norm(text||'');
+  const o={z:null,h:null,v:null,k:null,drift:false,rand:false,d:null,fade:null,size:null};
+  let m=s.match(/(?:fundido|transicion|crossfade|fade)\D{0,14}?(\d+(?:[.,]\d+)?)\s*(?:s\b|seg)/);
+  if(m){o.fade=num(m[1]);s=s.replace(m[0],' ')}
+  else if(/sin (?:transicion|fundido)|corte seco/.test(s))o.fade=0;
+  m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:s\b|seg|sec)/);
+  if(m)o.d=Math.min(20,Math.max(1,num(m[1])));
+  if(/vertical|tiktok|reels|stories|story|9:16|shorts/.test(s))o.size='v';
+  else if(/cuadrad|1:1|square/.test(s))o.size='sq';
+  else if(/1080p|full ?hd|alta calidad/.test(s))o.size='hd';
+  else if(/horizontal|youtube|16:9/.test(s))o.size='h';
+  if(/zoom ?out|alej|retroced|desampli|reduc/.test(s))o.z='out';
+  else if(/zoom|acerc|ampli|entrar/.test(s))o.z='in';
+  if(/izquierd|left/.test(s))o.h='l';else if(/derech|right/.test(s))o.h='r';
+  if(/arriba|\bup\b|subir/.test(s))o.v='u';else if(/abajo|\bdown\b|bajar/.test(s))o.v='d';
+  o.drift=/movimiento|mover|desplaz|deriva|drift|paneo/.test(s);
+  o.rand=/aleatori|random|variad|mezcl|distint/.test(s);
+  const soft=/suave|sutil|leve|ligero|poco|peque|discret|subtle|gentle|lento|slow/.test(s);
+  const hard=/fuerte|intenso|marcad|dramatic|mucho|rapido|fast|energic/.test(s);
+  if(soft&&!hard)o.k=.5;else if(hard&&!soft)o.k=1.8;
+  return o;
+}
+function eff(it){
+  const i=parse(it.prompt),g=G,has=i.z||i.h||i.v||i.rand,e=has?i:g;
+  return{z:e.z,h:e.h,v:e.v,rand:e.rand,drift:e.drift,k:i.k??g.k,d:i.d??g.d??4};
+}
+function buildSpec(o,it){
+  let{z,h,v,drift}=o,k=o.k;
+  if(o.rand)({z=null,h=null,v=null}=it.r);
+  if(!z&&!h&&!v){z='in';drift=true;k=(k??.5)*.64}else k=k??1;
+  const zA=.25*k,m=Math.min(1,k);
+  let z0=1,z1=1;
+  if(z==='in')z1=1+zA;else if(z==='out')z0=1+zA;else z0=z1=1+.2*Math.max(k,.5);
+  let x0=.5,x1=.5,y0=.5,y1=.5;
+  if(h){const a=h==='l'?.5:-.5;x0=.5+a*m;x1=.5-a*m}
+  if(v){const a=v==='u'?.5:-.5;y0=.5+a*m;y1=.5-a*m}
+  if(!h&&!v&&drift){x0=.5-it.dir*.17;x1=.5+it.dir*.17;y0=.43;y1=.57}
+  return{z0,z1,x0,x1,y0,y1};
+}
+function describe(){
+  const g=G,p=[];
+  if(g.rand)p.push('movimientos variados');
+  else if(!g.z&&!g.h&&!g.v)p.push('zoom suave + pequeño movimiento');
+  else{
+    if(g.z)p.push(g.z==='in'?'zoom in':'zoom out');
+    if(g.h)p.push('hacia '+DIRS[g.h]);
+    if(g.v)p.push('hacia '+DIRS[g.v]);
+    if(g.drift&&!g.h&&!g.v)p.push('con pequeño movimiento');
+  }
+  if(g.k)p.push(g.k<1?'intensidad baja':'intensidad alta');
+  p.push((g.d??4)+' s por imagen');
+  const fd=g.fade??.6;p.push(fd>0?'fundido '+Math.min(fd,...(P.length?P.map(q=>q.d):[fd]))+' s':'sin fundido');
+  const[w,h]=SIZES[g.size||'h'];p.push(w+'×'+h);
+  return 'Entendido: '+p.join(' · ');
+}
+function recalc(){
+  G=parse($('#prompt').value);
+  const[w,h]=SIZES[G.size||'h'];
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+  P=[];let s=0;
+  items.forEach(it=>{const o=eff(it);P.push({it,s,d:o.d,sp:buildSpec(o,it)});s+=o.d});
+  TOTAL=s;
+  FADE=Math.min(G.fade??.6,P.length?Math.min(...P.map(q=>q.d)):0);
+  $('#info').textContent=describe();
+  t=Math.min(t,TOTAL);draw(t);ui();
+}
+
+/* ---- Dibujo ---- */
+function drawImg(it,sp,p){
+  const W=cv.width,H=cv.height,im=it.img,s0=Math.max(W/im.naturalWidth,H/im.naturalHeight);
+  const z=sp.z0+(sp.z1-sp.z0)*p,px=sp.x0+(sp.x1-sp.x0)*p,py=sp.y0+(sp.y1-sp.y0)*p;
   const dw=im.naturalWidth*s0*z,dh=im.naturalHeight*s0*z;
   ctx.drawImage(im,-(dw-W)*px,-(dh-H)*py,dw,dh);
 }
 function draw(time){
-  const {d,f,eff}=cfg(),W=cv.width,H=cv.height;
+  const W=cv.width,H=cv.height;
   ctx.globalAlpha=1;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
-  if(!items.length){ctx.fillStyle='#888';ctx.font=`${W/32}px system-ui`;ctx.textAlign='center';ctx.fillText('Añade imágenes para empezar',W/2,H/2);return}
-  items.forEach((it,i)=>{
-    const s=i*d,e=s+d+f;
-    if(time<s||time>e)return;
-    const p=Math.min(1,(time-s)/(d+f));
-    ctx.globalAlpha=(i>0&&f>0&&time<s+f)?(time-s)/f:1;
-    drawImg(it.img,p,eff==='random'?it.rand:eff);
+  if(!P.length){ctx.fillStyle='#888';ctx.font=`${W/32}px system-ui`;ctx.textAlign='center';ctx.fillText('Añade imágenes para empezar',W/2,H/2);return}
+  P.forEach((q,i)=>{
+    if(time<q.s||time>q.s+q.d+FADE)return;
+    const p=Math.min(1,(time-q.s)/(q.d+FADE));
+    ctx.globalAlpha=(i>0&&FADE>0&&time<q.s+FADE)?(time-q.s)/FADE:1;
+    drawImg(q.it,q.sp,p);
   });
   ctx.globalAlpha=1;
 }
 function ui(){
-  const T=total();
-  $('#time').textContent=`${Math.min(t,T).toFixed(1)} / ${T.toFixed(1)} s`;
-  $('#scrub').value=T?Math.min(1000,t/T*1000):0;
+  $('#time').textContent=`${Math.min(t,TOTAL).toFixed(1)} / ${TOTAL.toFixed(1)} s`;
+  $('#scrub').value=TOTAL?Math.min(1000,t/TOTAL*1000):0;
   $('#play').textContent=playing?'⏸ Pausar':'▶ Reproducir';
-  const has=items.length>0&&!busy;
-  $('#play').disabled=$('#scrub').disabled=$('#exp').disabled=!has;
+  $('#play').disabled=$('#scrub').disabled=$('#exp').disabled=!(items.length&&!busy);
 }
 function loop(now){
   if(!playing)return;
-  t+=(now-last)/1000;last=now;
-  if(t>=total())t=0;
+  t+=(now-last)/1000;last=now;if(t>=TOTAL)t=0;
   draw(t);ui();requestAnimationFrame(loop);
 }
 function setPlaying(v){playing=v;if(v){last=performance.now();requestAnimationFrame(loop)}ui()}
 
+/* ---- Imágenes ---- */
 function addFiles(files){
   [...files].filter(f=>f.type.startsWith('image/')).forEach(f=>{
     const r=new FileReader();
     r.onload=()=>{
       const img=new Image();
-      img.onload=()=>{items.push({img,url:r.result,rand:EFFECTS[Math.floor(Math.random()*EFFECTS.length)]});renderThumbs();draw(t);ui()};
+      img.onload=()=>{
+        items.push({img,url:r.result,prompt:'',r:RANDS[Math.floor(Math.random()*RANDS.length)],dir:Math.random()<.5?-1:1});
+        renderList();recalc();
+      };
       img.src=r.result;
     };
     r.readAsDataURL(f);
   });
 }
-function renderThumbs(){
-  const box=$('#thumbs');box.innerHTML='';
+function renderList(){
+  const box=$('#list');box.innerHTML='';
   items.forEach((it,i)=>{
-    const d=document.createElement('div');d.className='th';
-    d.innerHTML=`<img src="${it.url}" alt=""><b title="Quitar">×</b>`;
-    d.querySelector('b').onclick=()=>{items.splice(i,1);t=0;renderThumbs();draw(0);ui()};
-    box.appendChild(d);
+    const d=document.createElement('div');d.className='it';
+    const im=document.createElement('img');im.src=it.url;im.alt='';
+    const inp=document.createElement('input');inp.type='text';inp.maxLength=140;inp.value=it.prompt;
+    inp.placeholder='Prompt solo para esta imagen (opcional)';
+    inp.oninput=()=>{it.prompt=inp.value;recalc()};
+    const x=document.createElement('b');x.textContent='×';x.title='Quitar';
+    x.onclick=()=>{items.splice(i,1);t=0;renderList();recalc()};
+    d.append(im,inp,x);box.appendChild(d);
   });
 }
-function setSize(){
-  const [w,h]=$('#res_').value.split('x').map(Number);
-  cv.width=w;cv.height=h;draw(t);
-}
+
+/* ---- Exportar ---- */
 async function exportVideo(){
   if(!items.length||busy)return;
   const types=['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
@@ -159,30 +231,31 @@ async function exportVideo(){
   const rec=new MediaRecorder(cv.captureStream(30),{mimeType:mime,videoBitsPerSecond:8e6}),chunks=[];
   rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
   const stopped=new Promise(r=>rec.onstop=r);
-  const T=total(),t0=performance.now();
+  const T=TOTAL,t0=performance.now();
   rec.start();
   await new Promise(res=>{(function step(now){
     const el=(now-t0)/1000;draw(Math.min(el,T-.001));fill.style.width=Math.min(100,el/T*100)+'%';
     el<T?requestAnimationFrame(step):res();
   })(t0)});
   rec.stop();await stopped;
-  const blob=new Blob(chunks,{type:mime}),url=URL.createObjectURL(blob);
+  const url=URL.createObjectURL(new Blob(chunks,{type:mime}));
   $('#vid').src=url;$('#dl').href=url;$('#dl').download='anima-imagenes.'+(mime.includes('mp4')?'mp4':'webm');
   $('#res').style.display='block';bar.style.display='none';fill.style.width='0';
   busy=false;t=0;draw(0);ui();
 }
 
+/* ---- Eventos ---- */
 $('#drop').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
 ['dragover','dragenter'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.remove('over')}));
 $('#drop').addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+$('#prompt').oninput=recalc;
+$('#chips').onclick=e=>{if(e.target.tagName==='BUTTON'){$('#prompt').value=e.target.textContent;recalc()}};
 $('#play').onclick=()=>setPlaying(!playing);
-$('#scrub').oninput=e=>{t=e.target.value/1000*total();draw(t);ui()};
+$('#scrub').oninput=e=>{t=e.target.value/1000*TOTAL;draw(t);ui()};
 $('#exp').onclick=exportVideo;
-['eff','dur','fade'].forEach(id=>$('#'+id).onchange=()=>{draw(t);ui()});
-$('#res_').onchange=setSize;
-draw(0);ui();
+recalc();
 </script>
 </body>
 </html>
