@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Anima Imágenes con Prompts</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞️</text></svg>">
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--fg:#1b1b1f;--mut:#6b6b76;--ac:#6d4aff;--bd:#e3e1db;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121216;--card:#1c1c22;--fg:#f0f0f4;--mut:#9a9aa6;--ac:#8f74ff;--bd:#2d2d36}}
+:root[data-theme="dark"]{--bg:#121216;--card:#1c1c22;--fg:#f0f0f4;--mut:#9a9aa6;--ac:#8f74ff;--bd:#2d2d36}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.6rem;margin:0 0 4px}
+p.sub{margin:0 0 20px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+@media(max-width:840px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+canvas{width:100%;height:auto;max-height:70vh;object-fit:contain;border-radius:10px;background:#000;display:block}
+select,textarea,input[type=text]{width:100%;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);font:inherit}
+textarea{resize:vertical;min-height:70px}
+label{display:block;font-size:.85rem;color:var(--mut);margin:0 0 4px}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--ac);color:#fff;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips button{background:transparent;color:var(--fg);border:1px solid var(--bd);padding:4px 10px;border-radius:999px;font-size:.8rem}
+.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{background:transparent;color:var(--fg);border:1px solid var(--bd);padding:5px 11px;border-radius:999px;font-size:.8rem}
+.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+h2{font-size:1rem;margin:0 0 10px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:12px}
+.cat button{background:transparent;color:var(--fg);border:1px solid var(--bd);text-align:left;font-size:.8rem;padding:6px 8px;border-radius:8px;line-height:1.25}
+.cat button.on{border-color:var(--ac);color:var(--ac);font-weight:600}
+#info{font-size:.85rem;color:var(--ac);margin-top:10px}
+.drop{border:2px dashed var(--bd);border-radius:12px;padding:16px;text-align:center;color:var(--mut);cursor:pointer}
+.drop.over{border-color:var(--ac);color:var(--ac)}
+.it{display:grid;grid-template-columns:56px 1fr 22px;gap:8px;align-items:center;margin-top:8px}
+.it img{width:56px;height:42px;object-fit:cover;border-radius:6px}
+.it b{width:22px;height:22px;border-radius:50%;background:var(--bd);text-align:center;line-height:22px;cursor:pointer;font-weight:400}
+.row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+input[type=range]{accent-color:var(--ac)}
+.bar{height:6px;background:var(--bd);border-radius:3px;overflow:hidden;margin-top:10px;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--ac)}
+.note{font-size:.8rem;color:var(--mut)}
+#res{margin-top:14px;display:none}
+#res video{width:100%;max-height:60vh;border-radius:10px}
+a.dl{display:inline-block;margin-top:8px;padding:10px 14px;border-radius:10px;background:var(--ac);color:#fff;text-decoration:none}
+</style>
+</head>
+<body>
+<main>
+  <noscript><p style="color:#c00">Esta página necesita JavaScript activado para funcionar.</p></noscript>
+  <h1>🎞️ Anima Imágenes con Prompts</h1>
+  <p class="sub"><b style="color:var(--ac)">Versión 4 · 50 combinaciones (20 para anuncios de TikTok Shop)</b><br>Sube tus fotos y escribe cómo quieres que se muevan. Todo ocurre en tu navegador: tus imágenes no se suben a ningún sitio.</p>
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" width="1280" height="720"></canvas>
+      <div class="row">
+        <button id="play" disabled>▶ Reproducir</button>
+        <input type="range" id="scrub" min="0" max="1000" value="0" style="flex:1;min-width:120px" disabled>
+        <span id="time" class="note">0.0 / 0.0 s</span>
+      </div>
+      <div class="row"><button id="exp" disabled style="flex:1">Crear vídeo</button></div>
+      <div class="bar" id="bar"><i id="barfill"></i></div>
+      <p class="note">El vídeo se graba en tiempo real: mantén esta pestaña visible mientras se crea.</p>
+      <div id="res"><video id="vid" controls playsinline></video><br><a class="dl" id="dl">⬇ Descargar vídeo</a></div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>1. Formato y duración</h2>
+        <div class="two">
+          <div><label for="fmt">Formato</label>
+            <select id="fmt">
+              <option value="h">Horizontal 16:9 · 1280×720</option>
+              <option value="hd">Horizontal HD · 1920×1080</option>
+              <option value="v">Vertical 9:16 · TikTok/Reels</option>
+              <option value="sq">Cuadrado 1:1 · 1080×1080</option>
+            </select></div>
+          <div><label for="dur">Duración por imagen</label>
+            <select id="dur">
+              <option value="2">2 segundos</option><option value="3">3 segundos</option><option value="4" selected>4 segundos</option>
+              <option value="5">5 segundos</option><option value="6">6 segundos</option><option value="8">8 segundos</option>
+              <option value="10">10 segundos</option><option value="12">12 segundos</option><option value="15">15 segundos</option><option value="20">20 segundos</option>
+            </select></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <h2>2. Elige una combinación (50)</h2>
+        <div class="tabs" id="tabs"><button data-t="all" class="on">Todas (50)</button><button data-t="s">🛍️ TikTok Shop (20)</button><button data-t="b">Básicas (30)</button></div>
+        <p class="note" style="margin:0 0 8px">Las de TikTok Shop ya ponen formato vertical 9:16, duración corta y cortes rápidos, listas para un anuncio de producto.</p>
+        <div class="cat" id="cat"></div>
+        <label for="prompt">Prompt (se rellena al elegir; puedes editarlo o escribir el tuyo)</label>
+        <textarea id="prompt">zoom suave con pequeño movimiento</textarea>
+        <div id="info"></div>
+        <p class="note">Si el prompt dice otra duración o formato (por ejemplo "5 segundos" o "vertical"), manda el prompt. Entiende: <b>zoom in / out</b>, <b>izquierda / derecha / arriba / abajo</b>, <b>girar</b>, <b>latido</b>, <b>temblor</b>, <b>"y luego"</b>, <b>suave / fuerte</b>, <b>"fundido 1 s"</b>, <b>"sin transición"</b>, <b>aleatorio</b>. Se interpreta con reglas en tu navegador; no es IA generativa.</p>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="drop" id="drop">Arrastra imágenes aquí o toca para elegirlas<input id="file" type="file" accept="image/*" multiple hidden></div>
+        <div id="list"></div>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const SIZES={h:[1280,720],hd:[1920,1080],v:[1080,1920],sq:[1080,1080]};
+const RANDS=[{z:'in'},{z:'out'},{h:'l'},{h:'r'},{v:'u'},{v:'d'}];
+const DIRS={l:'la izquierda',r:'la derecha',u:'arriba',d:'abajo'};
+let items=[],P=[],G={},FADE=.6,TOTAL=0,t=0,playing=false,last=0,busy=false;
+
+const BASIC=[
+['Suave clásico','zoom suave con pequeño movimiento'],['Zoom in lento','zoom in lento'],['Zoom out lento','zoom out lento'],
+['Zoom in fuerte','zoom in fuerte'],['Zoom out fuerte','zoom out fuerte'],['Paneo a la izquierda','desplazar hacia la izquierda suave'],
+['Paneo a la derecha','desplazar hacia la derecha suave'],['Paneo hacia arriba','desplazar hacia arriba suave'],['Paneo hacia abajo','desplazar hacia abajo suave'],
+['Zoom in + izquierda','zoom in, desplazar hacia la izquierda'],['Zoom in + derecha','zoom in, desplazar hacia la derecha'],
+['Zoom out + izquierda','zoom out, desplazar hacia la izquierda'],['Zoom out + derecha','zoom out, desplazar hacia la derecha'],
+['Zoom in + arriba','zoom in, desplazar hacia arriba'],['Zoom out + abajo','zoom out, desplazar hacia abajo'],
+['Respiración (latido suave)','latido suave'],['Zoom in + latido','zoom in lento, latido'],['Cámara en mano','temblor suave'],
+['Documental (zoom + temblor)','zoom in lento, temblor suave'],['Giro suave','girar un poco'],['Giro derecha + zoom in','girar a la derecha, zoom in suave'],
+['Giro izquierda + zoom out','girar a la izquierda, zoom out'],['Acercar y alejar','acercar y luego alejar'],
+['Acercar, alejar + giro','acercar y luego alejar, girar un poco'],['Paneo de ida y vuelta','desplazar hacia la derecha y luego volver, suave'],
+['Cinemático','zoom in lento, desplazar hacia la derecha, girar un poco'],['Drama','zoom in fuerte, latido, temblor'],
+['Energético','zoom out rápido, girar a la izquierda, latido fuerte'],['Todo a la vez','varios efectos a la vez'],['Aleatorio','movimientos aleatorios']
+];
+const SHOP=[
+['Producto estrella','vertical, zoom in lento, 3 segundos'],
+['Revelación del producto','vertical, zoom out lento, 3 segundos, fundido 0.5 s'],
+['Plano de detalle (macro)','vertical, zoom in fuerte, 2 segundos'],
+['Oferta flash','vertical, zoom in rápido, latido fuerte, sin transición, 2 segundos'],
+['Unboxing en mano','vertical, temblor suave, zoom in lento, 3 segundos'],
+['Reseña estilo UGC','vertical, temblor suave, girar un poco, 3 segundos'],
+['Lanzamiento premium','vertical, zoom in lento, desplazar hacia arriba suave, fundido 1 s, 4 segundos'],
+['Barrido de producto →','vertical, desplazar hacia la derecha, 3 segundos'],
+['Barrido de producto ←','vertical, desplazar hacia la izquierda, 3 segundos'],
+['Rebote de compra','vertical, latido fuerte, zoom in suave, 2 segundos, sin transición'],
+['Ráfaga de ofertas','vertical, aleatorio, rápido, sin transición, 2 segundos'],
+['Escaparate (baja y acerca)','vertical, desplazar hacia abajo suave, zoom in lento, 3 segundos'],
+['Ascenso de lujo','vertical, desplazar hacia arriba suave, zoom in lento, fundido 1 s, 4 segundos'],
+['Acercar y revelar','vertical, acercar y luego alejar, 4 segundos'],
+['Trending dinámico','vertical, zoom in rápido, girar un poco, sin transición, 2 segundos'],
+['Giro llamativo','vertical, girar a la derecha, latido, zoom in, 3 segundos'],
+['Demostración tranquila','vertical, zoom suave con pequeño movimiento, 5 segundos'],
+['Promo energética','vertical, zoom out rápido, girar a la izquierda, latido fuerte, sin transición, 2 segundos'],
+['Anuncio con todo','vertical, varios efectos a la vez, 3 segundos'],
+['Producto cuadrado 1:1','cuadrado, zoom in lento, 3 segundos']
+];
+const PRESETS=[...SHOP.map(x=>[...x,'s']),...BASIC.map(x=>[...x,'b'])];
+let TAB='all';
+function renderCat(){
+  const box=$('#cat');box.innerHTML='';
+  PRESETS.forEach(([n,pr,c],i)=>{
+    if(TAB!=='all'&&TAB!==c)return;
+    const b=document.createElement('button');b.textContent=(i+1)+'. '+n;b.title=pr;b.dataset.i=i;
+    b.onclick=()=>{$('#prompt').value=pr;recalc()};box.appendChild(b);
+  });
+  markCat();
+}
+function markCat(){[...$('#cat').children].forEach(b=>b.classList.toggle('on',PRESETS[b.dataset.i][1]===$('#prompt').value.trim()))}
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const num=x=>parseFloat(String(x).replace(',','.'));
+
+/* ---- Prompt -> parámetros ---- */
+function parse(text){
+  let s=norm(text||'');
+  const o={z:null,h:null,v:null,k:null,drift:false,rand:false,d:null,fade:null,size:null,rot:0,pulse:false,shake:false,pp:false,combo:false};
+  let m=s.match(/(?:fundido|transicion|crossfade|fade)\D{0,14}?(\d+(?:[.,]\d+)?)\s*(?:s\b|seg)/);
+  if(m){o.fade=num(m[1]);s=s.replace(m[0],' ')}
+  else if(/sin (?:transicion|fundido)|corte seco/.test(s))o.fade=0;
+  m=s.match(/(\d+(?:[.,]\d+)?)\s*(?:s\b|seg|sec)/);
+  if(m)o.d=Math.min(20,Math.max(1,num(m[1])));
+  if(/vertical|tiktok|reels|stories|story|9:16|shorts/.test(s))o.size='v';
+  else if(/cuadrad|1:1|square/.test(s))o.size='sq';
+  else if(/1080p|full ?hd|alta calidad/.test(s))o.size='hd';
+  else if(/horizontal|youtube|16:9/.test(s))o.size='h';
+  m=s.match(/\b(?:gir|rota|inclin|torcer|spin|tilt)\w*\s*(?:\w+\s+){0,2}?(izquierd|derech|antihorari|horari|contrari)/);
+  if(m){o.rot=/izquierd|antihorari|contrari/.test(m[1])?-1:1;s=s.replace(m[0],' ')}
+  else if(/\b(?:gir|rota|inclin|torcer|spin|tilt)/.test(s))o.rot=1;
+  o.pp=/y luego|y despues|despues|vuelve|vuelta|rebot|ping ?pong|bucle|regresa/.test(s);
+  const hasOut=/zoom ?out|alej|retroced|desampli|reduc/.test(s),hasIn=/zoom ?in|acerc|ampli|entrar/.test(s);
+  if(hasOut&&hasIn&&o.pp)o.z='in';else if(hasOut)o.z='out';else if(hasIn||/zoom/.test(s))o.z='in';
+  if(/izquierd|left/.test(s))o.h='l';else if(/derech|right/.test(s))o.h='r';
+  if(/arriba|\bup\b|subir/.test(s))o.v='u';else if(/abajo|\bdown\b|bajar/.test(s))o.v='d';
+  o.drift=/movimiento|mover|desplaz|deriva|drift|paneo/.test(s);
+  o.rand=/aleatori|random|variad|distint/.test(s);
+  o.pulse=/latido|pulso|pulsa|respir|palpit|pulse/.test(s);
+  o.shake=/temblor|vibra|sacud|shake|mano alzada|en mano|handheld/.test(s);
+  o.combo=/varios|combin|mezcl|todos los efectos|a la vez|al mismo tiempo|junto/.test(s);
+  const soft=/suave|sutil|leve|ligero|poco|peque|discret|subtle|gentle|lento|slow/.test(s);
+  const hard=/fuerte|intenso|marcad|dramatic|mucho|rapido|fast|energic/.test(s);
+  if(soft&&!hard)o.k=.5;else if(hard&&!soft)o.k=1.8;
+  return o;
+}
+function eff(it){
+  const i=parse(it.prompt),g=G,has=i.z||i.h||i.v||i.rot||i.pulse||i.shake||i.rand||i.combo,e=has?i:g;
+  return{...e,pp:i.pp||e.pp,k:i.k??g.k,d:i.d??g.d??4};
+}
+function buildSpec(o,it){
+  let{z,h,v,drift,rot,pulse,shake}=o,k=o.k;
+  if(o.rand)({z=null,h=null,v=null}=it.r);
+  if(o.combo){z=z||'in';drift=true;rot=rot||1;pulse=true}
+  if(!z&&!h&&!v&&!rot&&!pulse&&!shake){z='in';drift=true;k=(k??.5)*.64}else k=k??1;
+  const zA=.25*k,m=Math.min(1,k);
+  let z0=1,z1=1;
+  if(z==='in')z1=1+zA;else if(z==='out')z0=1+zA;else if(h||v)z0=z1=1+.2*Math.max(k,.5);
+  let x0=.5,x1=.5,y0=.5,y1=.5;
+  if(h){const a=h==='l'?.5:-.5;x0=.5+a*m;x1=.5-a*m}
+  if(v){const a=v==='u'?.5:-.5;y0=.5+a*m;y1=.5-a*m}
+  if(!h&&!v&&drift){x0=.5-it.dir*.17;x1=.5+it.dir*.17;y0=.43;y1=.57}
+  return{z0,z1,x0,x1,y0,y1,rot:rot?rot*4*Math.min(k,1.5):0,pulse:pulse?.04*k:0,shake:shake?.008*Math.min(k,1.5):0,pp:o.pp,d:o.d,seed:it.seed};
+}
+function describe(){
+  const g=G,p=[];
+  const none=!g.z&&!g.h&&!g.v&&!g.rot&&!g.pulse&&!g.shake&&!g.combo;
+  if(g.rand)p.push('movimientos variados');
+  else if(none)p.push('zoom suave + pequeño movimiento');
+  if(!g.rand&&!none){
+    if(g.z)p.push(g.z==='in'?'zoom in':'zoom out');
+    if(g.h)p.push('hacia '+DIRS[g.h]);
+    if(g.v)p.push('hacia '+DIRS[g.v]);
+    if(g.drift&&!g.h&&!g.v)p.push('pequeño movimiento');
+    if(g.rot)p.push('giro');
+    if(g.pulse)p.push('latido');
+    if(g.shake)p.push('temblor');
+    if(g.combo)p.push('efectos combinados');
+  }
+  if(g.pp)p.push('ida y vuelta');
+  if(g.k)p.push(g.k<1?'intensidad baja':'intensidad alta');
+  p.push((g.d??4)+' s por imagen');
+  const fd=g.fade??.6;p.push(fd>0?'fundido '+Math.min(fd,...(P.length?P.map(q=>q.d):[fd]))+' s':'sin fundido');
+  const[w,h]=SIZES[g.size||'h'];p.push(w+'×'+h);
+  return 'Entendido: '+p.join(' · ');
+}
+function recalc(){
+  G=parse($('#prompt').value);G.d=G.d??+$('#dur').value;G.size=G.size||$('#fmt').value;
+  const[w,h]=SIZES[G.size||'h'];
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+  P=[];let s=0;
+  items.forEach(it=>{const o=eff(it);P.push({it,s,d:o.d,sp:buildSpec(o,it)});s+=o.d});
+  TOTAL=s;
+  FADE=Math.min(G.fade??.6,P.length?Math.min(...P.map(q=>q.d)):0);
+  $('#info').textContent=describe();
+  markCat();
+  t=Math.min(t,TOTAL);draw(t);ui();
+}
+
+/* ---- Dibujo ---- */
+function drawImg(it,sp,p){
+  const W=cv.width,H=cv.height,im=it.img,s0=Math.max(W/im.naturalWidth,H/im.naturalHeight);
+  const q=sp.pp?(p<.5?2*p:2-2*p):p,tt=p*sp.d;
+  let z=sp.z0+(sp.z1-sp.z0)*q;
+  const px=sp.x0+(sp.x1-sp.x0)*q,py=sp.y0+(sp.y1-sp.y0)*q;
+  if(sp.pulse)z*=1+sp.pulse*(.5+.5*Math.sin(2*Math.PI*tt/1.5-Math.PI/2));
+  const ang=sp.rot*Math.PI/180*(2*q-1);
+  if(ang)z*=Math.abs(Math.cos(ang))+Math.abs(Math.sin(ang))*Math.max(W/H,H/W);
+  let ox=0,oy=0;
+  if(sp.shake){
+    z*=1+sp.shake*2;const a=sp.shake*W,sd=it.seed;
+    ox=a*(Math.sin(tt*17.3+sd)+.6*Math.sin(tt*29.1+sd*2))/1.6;
+    oy=a*(Math.sin(tt*21.7+sd*3)+.6*Math.sin(tt*33.3+sd))/1.6;
+  }
+  const dw=im.naturalWidth*s0*z,dh=im.naturalHeight*s0*z;
+  ctx.save();
+  if(ang){ctx.translate(W/2,H/2);ctx.rotate(ang);ctx.translate(-W/2,-H/2)}
+  ctx.drawImage(im,-(dw-W)*px+ox,-(dh-H)*py+oy,dw,dh);
+  ctx.restore();
+}
+function draw(time){
+  const W=cv.width,H=cv.height;
+  ctx.globalAlpha=1;ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(!P.length){ctx.fillStyle='#888';ctx.font=`${W/32}px system-ui`;ctx.textAlign='center';ctx.fillText('Añade imágenes para empezar',W/2,H/2);return}
+  P.forEach((q,i)=>{
+    if(time<q.s||time>q.s+q.d+FADE)return;
+    const p=Math.min(1,(time-q.s)/(q.d+FADE));
+    ctx.globalAlpha=(i>0&&FADE>0&&time<q.s+FADE)?(time-q.s)/FADE:1;
+    drawImg(q.it,q.sp,p);
+  });
+  ctx.globalAlpha=1;
+}
+function ui(){
+  $('#time').textContent=`${Math.min(t,TOTAL).toFixed(1)} / ${TOTAL.toFixed(1)} s`;
+  $('#scrub').value=TOTAL?Math.min(1000,t/TOTAL*1000):0;
+  $('#play').textContent=playing?'⏸ Pausar':'▶ Reproducir';
+  $('#play').disabled=$('#scrub').disabled=$('#exp').disabled=!(items.length&&!busy);
+}
+function loop(now){
+  if(!playing)return;
+  t+=(now-last)/1000;last=now;if(t>=TOTAL)t=0;
+  draw(t);ui();requestAnimationFrame(loop);
+}
+function setPlaying(v){playing=v;if(v){last=performance.now();requestAnimationFrame(loop)}ui()}
+
+/* ---- Imágenes ---- */
+function addFiles(files){
+  [...files].filter(f=>f.type.startsWith('image/')).forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        items.push({img,url:r.result,prompt:'',r:RANDS[Math.floor(Math.random()*RANDS.length)],dir:Math.random()<.5?-1:1,seed:Math.random()*100});
+        renderList();recalc();
+      };
+      img.src=r.result;
+    };
+    r.readAsDataURL(f);
+  });
+}
+function renderList(){
+  const box=$('#list');box.innerHTML='';
+  items.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='it';
+    const im=document.createElement('img');im.src=it.url;im.alt='';
+    const inp=document.createElement('input');inp.type='text';inp.maxLength=140;inp.value=it.prompt;
+    inp.placeholder='Prompt solo para esta imagen (opcional)';
+    inp.oninput=()=>{it.prompt=inp.value;recalc()};
+    const x=document.createElement('b');x.textContent='×';x.title='Quitar';
+    x.onclick=()=>{items.splice(i,1);t=0;renderList();recalc()};
+    d.append(im,inp,x);box.appendChild(d);
+  });
+}
+
+/* ---- Exportar ---- */
+async function exportVideo(){
+  if(!items.length||busy)return;
+  const types=['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  const mime=window.MediaRecorder&&types.find(m=>MediaRecorder.isTypeSupported(m));
+  if(!mime){alert('Tu navegador no permite grabar vídeo. Prueba con Chrome, Edge o Firefox.');return}
+  setPlaying(false);busy=true;ui();$('#res').style.display='none';
+  const bar=$('#bar'),fill=$('#barfill');bar.style.display='block';
+  const rec=new MediaRecorder(cv.captureStream(30),{mimeType:mime,videoBitsPerSecond:8e6}),chunks=[];
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const stopped=new Promise(r=>rec.onstop=r);
+  const T=TOTAL,t0=performance.now();
+  rec.start();
+  await new Promise(res=>{(function step(now){
+    const el=(now-t0)/1000;draw(Math.min(el,T-.001));fill.style.width=Math.min(100,el/T*100)+'%';
+    el<T?requestAnimationFrame(step):res();
+  })(t0)});
+  rec.stop();await stopped;
+  const url=URL.createObjectURL(new Blob(chunks,{type:mime}));
+  $('#vid').src=url;$('#dl').href=url;$('#dl').download='anima-imagenes.'+(mime.includes('mp4')?'mp4':'webm');
+  $('#res').style.display='block';bar.style.display='none';fill.style.width='0';
+  busy=false;t=0;draw(0);ui();
+}
+
+/* ---- Eventos ---- */
+$('#drop').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+['dragover','dragenter'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.add('over')}));
+['dragleave','drop'].forEach(ev=>$('#drop').addEventListener(ev,e=>{e.preventDefault();$('#drop').classList.remove('over')}));
+$('#drop').addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+$('#prompt').oninput=recalc;
+$('#dur').onchange=$('#fmt').onchange=recalc;
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;TAB=b.dataset.t;[...$('#tabs').children].forEach(x=>x.classList.toggle('on',x===b));renderCat()};
+$('#play').onclick=()=>setPlaying(!playing);
+$('#scrub').oninput=e=>{t=e.target.value/1000*TOTAL;draw(t);ui()};
+$('#exp').onclick=exportVideo;
+renderCat();recalc();
+</script>
+</body>
+</html>
